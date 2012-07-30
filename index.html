@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>ConfigPTFE by kellyhughes</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>ConfigPTFE</h1>
+        <h2>A configuration library which assists in reducing the friction between .NET projects and their configuration data.</h2>
+        <a href="https://github.com/kellyhughes/ConfigPTFE" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>What does ConfigPTFE do?</h1>
+
+<p>This library helps software development teams accomplish two goals:
+1.  share common configuration data between multiple applications.
+1.  switch configuration data used by applications via a global "environment name".</p>
+
+<h2>How does ConfigPTFE do that?</h2>
+
+<p>"ConfigPTFE.AdvancedConfigurationProvider" inherits from the Microsoft class "System.Configuration.ProtectedConfigurationProvider" and overrides its' "Decrypt" method.  The Decrypt method is expected to hand back a properly formed XmlNode to be integrated into the web.config or app.config.  However, there are no restrictions on what we do inside that method, so ConfigPTFE gathers its' data from whichever config files or database tables you tell it to. </p>
+
+<p>After the Decrypt method gathers the data from one or more specified sources, it creates a properly formed XmlNode and hands it back to the caller (Microsoft's System.Configuration) to integrate it back into the web.config or app.config.  ConfigurationProviders can be used on most of the nodes in an app.config or web.config.</p>
+
+<h2>I get the "Config" part, but What the heck is "PTFE"?</h2>
+
+<p>PolyTetraFluoroEthylene.  The most well known brand name of PTFE is "Teflon" by DuPont Co.<br>
+No, the software does not really contain PolyTetraFluoroEthylene...</p>
+
+<h2>Some Benefits:</h2>
+
+<ol>
+<li> Uses technology you already know. Access settings with System.ConfigurationManager.</li>
+<li> Config sections may be easily encrypted with AES encryption.</li>
+<li> Settings may be stored in xml config files or in database tables</li>
+<li> Less config values duplication.  Environment specific values are merged into a base config file at runtime, so values shared accross envionments don't have to be duplicated accross multiple files.</li>
+<li> Easy application deployments. Environment specific config values are removed from the web.config/app.config and the environment appropriate values are merged into the web.config/app.config at runtime.</li>
+<li> Very customizable. Since the environment name value is not held in source control, a developer can easily create custom connectionstring or applicationsetting config files or databases in thier development or test environment to feed a system under test any values they need.</li>
+<li> Even more customizable since you have access to the source code.  You can make it do anything you want!</li>
+</ol><h2>Examples</h2>
+
+<p>Several samples of ConfigPTFE usage are included in the solution. </p>
+
+<ul>
+<li>Some examples may require you to setup databases via the provided SQL scripts.</li>
+<li>Some examples may require you to install configuration files at a common location on your filesystem via the Administration utility provided as a project in this solution.</li>
+</ul><h2>Setting up your environment &amp; project:</h2>
+
+<h3>For a simple setup where your main goal is to leverage the "environment aware" configs, you'll need to do this:</h3>
+
+<p>1.)  Use the command line Admin tool (one of the projects in the solution) to create a sample "environment config" file at the expected location on your development machine (ex. for Windows 7 and above =&gt; C:\ProgramData\ConfigPTFE).<br>
+2.)  Open and amend this sample environment config with the appropriate "environment name" (ex. "DEV" for your local workstation)    </p>
+
+<div class="highlight"><pre><span class="cp">&lt;?xml version="1.0" encoding="utf-8" ?&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+  <span class="nt">&lt;environment</span> <span class="na">name=</span><span class="s">"DEV"</span> <span class="nt">/&gt;</span>
+  <span class="c">&lt;!-- ... --&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span>
+</pre></div>
+
+<p>3.)  Place a "configProtectedData" section to your application's web.config or app.config which references this filename in the "environmentFileName" attribute of the "add" node.<br><em>(Note: you can rename the file, just make sure you use the name you gave it here.)</em>    </p>
+
+<div class="highlight"><pre><span class="nt">&lt;configuration&gt;</span>
+  <span class="nt">&lt;configProtectedData&gt;</span>
+    <span class="nt">&lt;providers&gt;</span>
+      <span class="nt">&lt;add</span> <span class="na">name=</span><span class="s">"LowFrictionConfigProvider"</span> 
+           <span class="na">type=</span><span class="s">"ConfigPTFE.AdvancedConfigurationProvider, ConfigPTFE"</span> 
+           <span class="na">environmentFileName=</span><span class="s">"sample.environment.config"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/providers&gt;</span>
+  <span class="nt">&lt;/configProtectedData&gt;</span>
+  <span class="c">&lt;!-- ... --&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span>
+</pre></div>
+
+<p>4.)  Place an "appSettings" and/or "connectionStrings" node in your web/app.config using this format:    </p>
+
+<div class="highlight"><pre><span class="nt">&lt;appSettings</span> <span class="na">configProtectionProvider=</span><span class="s">"LowFrictionConfigProvider"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;EncryptedData&gt;</span>
+    <span class="nt">&lt;sectionInfo</span> <span class="na">file=</span><span class="s">"[LOCAL]\ConfigSections\AppSettings\appSettings.[ENVIRONMENT].config"</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/EncryptedData&gt;</span>
+<span class="nt">&lt;/appSettings&gt;</span>
+
+<span class="nt">&lt;connectionStrings</span> <span class="na">configProtectionProvider=</span><span class="s">"LowFrictionConfigProvider"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;EncryptedData&gt;</span>
+    <span class="nt">&lt;sectionInfo</span> <span class="na">file=</span><span class="s">"[LOCAL]\ConfigSections\Connectionstrings\connectionStrings.[ENVIRONMENT].config"</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/EncryptedData&gt;</span>
+<span class="nt">&lt;/connectionStrings&gt;</span>
+</pre></div>
+
+<p>5.)  Create the folder(s) "ConfigSections\Connectionstrings" &amp;/or "ConfigSections\AppSettings"in your application to store configuration data specific to your application.    </p>
+
+<p>6.)  Create a base config file in each of those folders to hold all your settings which will be used in all environments (DEV, TEST, INTEGRATION, REGRESSION, PRODUCTION, etc.)    </p>
+
+<div class="highlight"><pre><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
+<span class="nt">&lt;EncryptedData</span> <span class="na">IsEncrypted=</span><span class="s">"false"</span><span class="nt">&gt;</span>
+    <span class="c">&lt;!-- "Rivendell" is defaulted to invalid values, so we may recognize at runtime that </span>
+<span class="c">              an appropriate environment specific diff file was not merged. --&gt;</span>
+    <span class="nt">&lt;add</span> <span class="na">name=</span><span class="s">"Rivendell"</span> <span class="na">connectionString=</span><span class="s">"..."</span> <span class="na">providerName=</span><span class="s">"..."</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/EncryptedData&gt;</span>
+</pre></div>
+
+<p>7.)  Create several environment specific configs side by side with that base config, each filled with the specific values you intend to override in the base config for that environment. (Don't forget that you'll need to use the appropriate Config Transform commands on each node. For more info on syntax, cf. <a href="http://msdn.microsoft.com/en-us/library/dd465326.aspx">http://msdn.microsoft.com/en-us/library/dd465326.aspx</a>)    </p>
+
+<div class="highlight"><pre><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
+<span class="nt">&lt;EncryptedData</span> <span class="na">IsEncrypted=</span><span class="s">"false"</span> <span class="na">xmlns:xdt=</span><span class="s">"http://schemas.microsoft.com/XML-Document-Transform"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;add</span> <span class="na">name=</span><span class="s">"Rivendell"</span> 
+         <span class="na">connectionString=</span><span class="s">"Server=.; Database=Rivendell; Trusted_Connection=True;"</span> 
+         <span class="na">providerName=</span><span class="s">"System.Data.SqlClient"</span>
+         <span class="na">xdt:Transform=</span><span class="s">"SetAttributes"</span> 
+         <span class="na">xdt:Locator=</span><span class="s">"Match(name)"</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/EncryptedData&gt;</span>
+</pre></div>
+
+<p>8.)  Run your application and see the appropriate values get pulled back via the ConfigurationManager   </p>
+
+<div class="highlight"><pre><span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">key</span> <span class="k">in</span> <span class="n">ConfigurationManager</span><span class="p">.</span><span class="n">AppSettings</span><span class="p">.</span><span class="n">AllKeys</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">"{0}{1}"</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span> <span class="p">+</span> <span class="s">":"</span><span class="p">).</span><span class="n">PadRight</span><span class="p">(</span><span class="m">30</span><span class="p">),</span> <span class="n">ConfigurationManager</span><span class="p">.</span><span class="n">AppSettings</span><span class="p">[</span><span class="n">key</span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+
+<h3>If you want to also share config values across multiple applications via a single file (ex. Connectionstrings):</h3>
+
+<p>1.)  Create the appropriate config file(s) at some location on the filesystem<br>
+     (ex. C:\Configuration\Connectionstrings).<br>
+2.)  Add/Amend the appropriate "configSectionLocations" entries in the environment.config file<br>
+     (ex. Set the correct file location(s) for the "COMMONSETTINGS" or "CONNECTIONSTRINGS" tokens.)    </p>
+
+<div class="highlight"><pre><span class="cp">&lt;?xml version="1.0" encoding="utf-8" ?&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+    <span class="nt">&lt;environment</span> <span class="na">name=</span><span class="s">"DEV"</span> <span class="na">role=</span><span class="s">"WEBSERVER"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;configSectionLocations&gt;</span>
+        <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"COMMONSETTINGS"</span> <span class="na">value=</span><span class="s">"C:\Configuration\CommonSettings"</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"CONNECTIONSTRINGS"</span> <span class="na">value=</span><span class="s">"C:\Configuration\Connectionstrings"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/configSectionLocations&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span>
+</pre></div>
+
+<p>3.) Add the appropriate "sectionInfo" nodes in your applications' web.config/app.config appsettings or connectionstrings nodes (cf. step 4 above.)  Note that you can have more than one "sectionInfo" node.    </p>
+
+<div class="highlight"><pre><span class="nt">&lt;appSettings</span> <span class="na">configProtectionProvider=</span><span class="s">"LowFrictionConfigProvider"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;EncryptedData&gt;</span>
+    <span class="nt">&lt;sectionInfo</span> <span class="na">file=</span><span class="s">"[LOCAL]\ConfigSections\AppSettings\appSettings.[ENVIRONMENT].config"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;sectionInfo</span> <span class="na">file=</span><span class="s">"[COMMONSETTINGS]\appSettings.[ENVIRONMENT].config"</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/EncryptedData&gt;</span>
+<span class="nt">&lt;/appSettings&gt;</span>
+
+<span class="nt">&lt;connectionStrings</span> <span class="na">configProtectionProvider=</span><span class="s">"LowFrictionConfigProvider"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;EncryptedData&gt;</span>
+    <span class="nt">&lt;sectionInfo</span> <span class="na">file=</span><span class="s">"[LOCAL]\ConfigSections\Connectionstrings\connectionStrings.[ENVIRONMENT].config"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;sectionInfo</span> <span class="na">file=</span><span class="s">"[CONNECTIONSTRINGS]\connectionStrings.[ENVIRONMENT].config"</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/EncryptedData&gt;</span>
+<span class="nt">&lt;/connectionStrings&gt;</span>
+</pre></div>
+
+<h3>If you want to also pull config values from a database table (ex. appsettings):</h3>
+
+<p>1.) Add "sectionInfo" node(s) to your applications' web.config/app.config appsettings node with the following format.<br><em>(Note: the "connectionStringName" attribute refers to a named connectionstring in the "connectionStrings" node of the web.config/app.config.  the "databaseTable" attribute value should be in the format of [schema].[table name])</em>    </p>
+
+<div class="highlight"><pre><span class="nt">&lt;appSettings</span> <span class="na">configProtectionProvider=</span><span class="s">"LowFrictionConfigProvider"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;EncryptedData&gt;</span>
+    <span class="nt">&lt;sectionInfo</span> <span class="na">file=</span><span class="s">"[LOCAL]\ConfigSections\AppSettings\appSettings.[ENVIRONMENT].config"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;sectionInfo</span> <span class="na">file=</span><span class="s">"[COMMONSETTINGS]\appSettings.[ENVIRONMENT].config"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;sectionInfo</span> <span class="na">connectionStringName=</span><span class="s">"Rivendell"</span>  
+                 <span class="na">databaseTable=</span><span class="s">"[Configuration].[ApplicationSetting]"</span> 
+                 <span class="na">keyColumn=</span><span class="s">"Name"</span> 
+                 <span class="na">valueColumn=</span><span class="s">"Value"</span> 
+                 <span class="na">throwLoadFailureExceptions=</span><span class="s">"true"</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/EncryptedData&gt;</span>
+<span class="nt">&lt;/appSettings&gt;</span>
+</pre></div>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/kellyhughes/ConfigPTFE/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/kellyhughes/ConfigPTFE/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/kellyhughes/ConfigPTFE"></a> is maintained by <a href="https://github.com/kellyhughes">kellyhughes</a>.</p>
+
+          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
