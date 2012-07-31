@@ -98,7 +98,10 @@ File expected at the following location(s):
 		/// it will need to be supplied by your application at runtime during initialization before the "Decrypt" method is called 
 		/// (the method used at runtime by the .NET framework to retrieve config values in plaintext via this library.)
 		/// </remarks>
-		protected string Entropy { get; set; }
+		private string _entropy;
+		protected string Entropy {
+			set { _entropy = value; }
+		}
 
 
 		// Environment specific properties
@@ -251,7 +254,7 @@ File expected at the following location(s):
 					TryReadKey(KeyFilePath);
 				}
 				else {
-					SetEncryptionFromStaticInitializationData();
+					TrySetEncryptionFromStaticInitializationData();
 				}
 			}
 
@@ -586,9 +589,9 @@ File expected at the following location(s):
 			return success;
 		}
 
-		public void CreateSampleEnvironmentConfig() {
+		public string CreateSampleEnvironmentConfig() {
 			if (!Directory.Exists(EnvironmentFileDirectory))
-				Directory.CreateDirectory(KeyDirectory);
+				Directory.CreateDirectory(EnvironmentFileDirectory);
 
 			var sampleFilePath = BuildEnvironmentFilePath("sample.environment.config");
 
@@ -596,19 +599,222 @@ File expected at the following location(s):
 				File.Delete(sampleFilePath);
 			}
 
-			using (var sw = new StreamWriter(sampleFilePath, false)) {
-				sw.Write(
-					@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+			var windowsFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+			var windowsDrive = windowsFolderPath.Substring(0, windowsFolderPath.IndexOf(Path.VolumeSeparatorChar));
+			var xml =
+@"<?xml version=""1.0"" encoding=""utf-8"" ?>
 <configuration>
     <environment name=""DEV"" role=""WEBSERVER"" />
     <configSectionLocations>
-        <add key=""COMMONSETTINGS"" value=""C:\projects\Configuration\CommonSettings"" />
-        <add key=""CONNECTIONSTRINGS"" value=""C:\projects\Configuration\Connectionstrings"" />
+        <add key=""COMMONSETTINGS"" value=""{0}:\Configuration\CommonSettings\Samples"" />
+        <add key=""CONNECTIONSTRINGS"" value=""{0}:\Configuration\Connectionstrings\Samples"" />
     </configSectionLocations>
-</configuration>");
+</configuration>";
+
+			using (var sw = new StreamWriter(sampleFilePath, false)) {
+				sw.Write(string.Format(xml, windowsDrive));
+				sw.Close();
+			}
+			return sampleFilePath;
+		}
+
+		public string CreateSampleAppSettingsConfigSectionFileSet() {
+			var windowsFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+			var windowsDrive = windowsFolderPath.Substring(0, windowsFolderPath.IndexOf(Path.VolumeSeparatorChar));
+
+			var directoryPath = string.Format(@"{0}:\Configuration\CommonSettings\Samples\", windowsDrive);
+			if (!Directory.Exists(directoryPath))
+				Directory.CreateDirectory(directoryPath);
+
+
+			// Create the base file
+			var sampleFilePathBase = string.Format("{0}{1}",directoryPath, "appSettings.config");
+			if (File.Exists(sampleFilePathBase)) {
+				File.Delete(sampleFilePathBase);
+			}
+
+			using (var sw = new StreamWriter(sampleFilePathBase, false)) {
+				sw.Write(
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<EncryptedData IsEncrypted=""false"">
+	<add key=""BillingServiceAddress"" value=""http://localhost/DefaultValue.svc"" />
+
+	<!-- EnrollmentServiceAddress is defaulted to a valid value, which may be overridden by values in an environment specific diff file -->
+	<add key=""EnrollmentServiceAddress"" value=""http://localhost/DefaultValue.svc"" />
+</EncryptedData>");
 
 				sw.Close();
 			}
+
+
+			// Create the diff file for DEV
+			var sampleFilePathDev = string.Format("{0}{1}", directoryPath, "appSettings.DEV.config");
+			if (File.Exists(sampleFilePathDev)) {
+				File.Delete(sampleFilePathDev);
+			}
+
+			using (var sw = new StreamWriter(sampleFilePathDev, false)) {
+				sw.Write(
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<EncryptedData IsEncrypted=""false"" xmlns:xdt=""http://schemas.microsoft.com/XML-Document-Transform"">
+	<add key=""EnrollmentServiceAddress"" value=""http://localhost/Enrollment.svc"" xdt:Transform=""SetAttributes"" xdt:Locator=""Match(key)"" />
+</EncryptedData>");
+
+				sw.Close();
+			}
+
+
+			// Create the diff file for INTEGRATION
+			var sampleFilePathInt = string.Format("{0}{1}", directoryPath, "appSettings.INTEGRATION.config");
+			if (File.Exists(sampleFilePathInt)) {
+				File.Delete(sampleFilePathInt);
+			}
+
+			using (var sw = new StreamWriter(sampleFilePathInt, false)) {
+				sw.Write(
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<EncryptedData IsEncrypted=""false"" xmlns:xdt=""http://schemas.microsoft.com/XML-Document-Transform"">
+	<add key=""EnrollmentServiceAddress"" value=""http://integration/Enrollment.svc"" xdt:Transform=""SetAttributes"" xdt:Locator=""Match(key)"" />
+</EncryptedData>");
+
+				sw.Close();
+			}
+
+
+			// Create the diff file for REGRESSION
+			var sampleFilePathReg = string.Format("{0}{1}", directoryPath, "appSettings.REGRESSION.config");
+			if (File.Exists(sampleFilePathReg)) {
+				File.Delete(sampleFilePathReg);
+			}
+
+			using (var sw = new StreamWriter(sampleFilePathReg, false)) {
+				sw.Write(
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<EncryptedData IsEncrypted=""false"" xmlns:xdt=""http://schemas.microsoft.com/XML-Document-Transform"">
+	<add key=""EnrollmentServiceAddress"" value=""http://regression/Enrollment.svc"" xdt:Transform=""SetAttributes"" xdt:Locator=""Match(key)"" />
+</EncryptedData>");
+
+				sw.Close();
+			}
+
+
+			// Create the diff file for PRODUCTION
+			var sampleFilePathProd = string.Format("{0}{1}", directoryPath, "appSettings.PRODUCTION.config");
+			if (File.Exists(sampleFilePathProd)) {
+				File.Delete(sampleFilePathProd);
+			}
+
+			using (var sw = new StreamWriter(sampleFilePathProd, false)) {
+				sw.Write(
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<EncryptedData IsEncrypted=""false"" xmlns:xdt=""http://schemas.microsoft.com/XML-Document-Transform"">
+	<add key=""EnrollmentServiceAddress"" value=""http://production/Enrollment.svc"" xdt:Transform=""SetAttributes"" xdt:Locator=""Match(key)"" />
+</EncryptedData>");
+
+				sw.Close();
+			}
+
+			return directoryPath;
+		}
+
+		public string CreateSampleConnectionStringsConfigSectionFileSet() {
+			var windowsFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+			var windowsDrive = windowsFolderPath.Substring(0, windowsFolderPath.IndexOf(Path.VolumeSeparatorChar));
+
+			var directoryPath = string.Format(@"{0}:\Configuration\Connectionstrings\Samples\", windowsDrive);
+			if (!Directory.Exists(directoryPath))
+				Directory.CreateDirectory(directoryPath);
+
+
+			// Create the base file
+			var sampleFilePathBase = string.Format("{0}{1}", directoryPath, "connectionstrings.config");
+			if (File.Exists(sampleFilePathBase)) {
+				File.Delete(sampleFilePathBase);
+			}
+
+			using (var sw = new StreamWriter(sampleFilePathBase, false)) {
+				sw.Write(
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<EncryptedData IsEncrypted=""false"">
+	<!-- ""Rivendell"" is defaulted to invalid values, so we may recognize at runtime that an appropriate environment specific diff file was not merged. -->
+	<add name=""Rivendell"" connectionString=""..."" providerName=""..."" />
+
+	<!-- This connectionstring is not defaulted to an invalid value because we are not overriding it in the diff files. -->
+	<add name=""AdventureWorks2008"" connectionString=""Server=.; Database=AdventureWorks2008; Trusted_Connection=True; Connection LifeTime=300;"" providerName=""System.Data.SqlClient"" />
+</EncryptedData>");
+
+				sw.Close();
+			}
+
+
+			// Create the diff file for DEV
+			var sampleFilePathDev = string.Format("{0}{1}",directoryPath, "connectionstrings.DEV.config");
+			if (File.Exists(sampleFilePathDev)) {
+				File.Delete(sampleFilePathDev);
+			}
+
+			using (var sw = new StreamWriter(sampleFilePathDev, false)) {
+				sw.Write(
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<EncryptedData IsEncrypted=""false"" xmlns:xdt=""http://schemas.microsoft.com/XML-Document-Transform"">
+	<add name=""Rivendell"" connectionString=""Server=.; Database=RivendellDev; Trusted_Connection=True; Connection LifeTime=300;"" providerName=""System.Data.SqlClient"" xdt:Transform=""SetAttributes"" xdt:Locator=""Match(name)"" />
+</EncryptedData>");
+
+				sw.Close();
+			}
+
+
+			// Create the diff file for INTEGRATION
+			var sampleFilePathInt = string.Format("{0}{1}",directoryPath, "connectionstrings.INTEGRATION.config");
+			if (File.Exists(sampleFilePathInt)) {
+				File.Delete(sampleFilePathInt);
+			}
+
+			using (var sw = new StreamWriter(sampleFilePathInt, false)) {
+				sw.Write(
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<EncryptedData IsEncrypted=""false"" xmlns:xdt=""http://schemas.microsoft.com/XML-Document-Transform"">
+	<add name=""Rivendell"" connectionString=""Server=.; Database=RivendellIntegration; Trusted_Connection=True; Connection LifeTime=300;"" providerName=""System.Data.SqlClient"" xdt:Transform=""SetAttributes"" xdt:Locator=""Match(name)"" />
+</EncryptedData>");
+
+				sw.Close();
+			}
+
+
+			// Create the diff file for REGRESSION
+			var sampleFilePathReg = string.Format("{0}{1}", directoryPath, "connectionstrings.REGRESSION.config");
+			if (File.Exists(sampleFilePathReg)) {
+				File.Delete(sampleFilePathReg);
+			}
+
+			using (var sw = new StreamWriter(sampleFilePathReg, false)) {
+				sw.Write(
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<EncryptedData IsEncrypted=""false"" xmlns:xdt=""http://schemas.microsoft.com/XML-Document-Transform"">
+	<add name=""Rivendell"" connectionString=""Server=.; Database=RivendellRegression; Trusted_Connection=True; Connection LifeTime=300;"" providerName=""System.Data.SqlClient"" xdt:Transform=""SetAttributes"" xdt:Locator=""Match(name)"" />
+</EncryptedData>");
+
+				sw.Close();
+			}
+
+
+			// Create the diff file for PRODUCTION
+			var sampleFilePathProd = string.Format("{0}{1}", directoryPath, "connectionstrings.PRODUCTION.config");
+			if (File.Exists(sampleFilePathProd)) {
+				File.Delete(sampleFilePathProd);
+			}
+
+			using (var sw = new StreamWriter(sampleFilePathProd, false)) {
+				sw.Write(
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<EncryptedData IsEncrypted=""false"" xmlns:xdt=""http://schemas.microsoft.com/XML-Document-Transform"">
+	<add name=""Rivendell"" connectionString=""Server=.; Database=RivendellProduction; Trusted_Connection=True; Connection LifeTime=300;"" providerName=""System.Data.SqlClient"" xdt:Transform=""SetAttributes"" xdt:Locator=""Match(name)"" />
+</EncryptedData>");
+
+				sw.Close();
+			}
+
+			return directoryPath;
 		}
 
 		/// <summary>
@@ -889,14 +1095,14 @@ File expected at the following location(s):
 
 		protected string EncryptStringWithDPAPI(string plainText) {
 			byte[] valBytes = Convert.FromBase64String(plainText);
-			byte[] entropy = Encoding.Unicode.GetBytes(Entropy);
+			byte[] entropy = Encoding.Unicode.GetBytes(_entropy);
 			byte[] returnBytes = ProtectedData.Protect(valBytes, entropy, DataProtectionScope.LocalMachine);
 			return Convert.ToBase64String(returnBytes);
 		}
 
 		protected string DecryptStringWithDPAPI(string encryptedText) {
 			byte[] valBytes = Convert.FromBase64String(encryptedText);
-			byte[] entropy = Encoding.Unicode.GetBytes(Entropy);
+			byte[] entropy = Encoding.Unicode.GetBytes(_entropy);
 			byte[] returnBytes = ProtectedData.Unprotect(valBytes, entropy, DataProtectionScope.LocalMachine);
 			return Convert.ToBase64String(returnBytes);
 		}
@@ -931,12 +1137,13 @@ File expected at the following location(s):
 			ConfigSectionLocations = InitializationData.ConfigSectionLocations ?? new Dictionary<string, string>();
 		}
 
-		private void SetEncryptionFromStaticInitializationData() {
-			if (InitializationData.AesKey != null && InitializationData.AesIV != null) {
-				Aes.Key = InitializationData.AesKey;
-				Aes.IV = InitializationData.AesIV;
-				_isAesCryptoServiceProviderInitialized = true;
-			}
+		private void TrySetEncryptionFromStaticInitializationData() {
+			if (InitializationData == null) return;
+			if (InitializationData.AesKey == null || InitializationData.AesIV == null) return;
+
+			Aes.Key = InitializationData.AesKey;
+			Aes.IV = InitializationData.AesIV;
+			_isAesCryptoServiceProviderInitialized = true;
 		}
 
 		#endregion

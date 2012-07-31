@@ -7,6 +7,9 @@ using System.Text;
 namespace ConfigPTFE.SampleConsoleApp {
 	internal class Program {
 		private static void Main(string[] args) {
+			Console.WriteLine("This example relies on initializing the AdvancedConfigurationProvider in code instead of with an environment.config file.");
+			Console.WriteLine("The app.config settings have the only additional info we need to get our data from appSettings.config, connectionStrings.config et. al.");
+
 			SetupValidEnvironmentChoices();
 			var environmentnameChoice = GetEnvironmentName();
 
@@ -27,7 +30,7 @@ namespace ConfigPTFE.SampleConsoleApp {
 			Console.WriteLine("Results:");
 			Console.WriteLine("-----------");
 			foreach (ConnectionStringSettings connection in ConfigurationManager.ConnectionStrings) {
-				if (connection.Name != "LocalSqlServer")
+				if (connection.Name != "LocalSqlServer" && connection.Name != "LocalMySqlServer")
 					Console.WriteLine("{0}{1}", (connection.Name + ":").PadRight(30), connection.ConnectionString);
 			}
 
@@ -51,8 +54,8 @@ namespace ConfigPTFE.SampleConsoleApp {
 				x => {
 					x.EnvironmentName = environmentName;
 					x.EnvironmentRole = string.Empty;
-					x.ConfigSectionLocations.Add("COMMONSETTINGS", @"C:\projects\Configuration\CommonSettings");
-					x.ConfigSectionLocations.Add("CONNECTIONSTRINGS", @"C:\projects\Configuration\Connectionstrings");
+					x.ConfigSectionLocations.Add("COMMONSETTINGS", @"C:\Configuration\CommonSettings\Samples");
+					x.ConfigSectionLocations.Add("CONNECTIONSTRINGS", @"C:\Configuration\Connectionstrings\Samples");
 					x.AesKey = GetAesKey();
 					x.AesIV = GetAesIV();
 				}
