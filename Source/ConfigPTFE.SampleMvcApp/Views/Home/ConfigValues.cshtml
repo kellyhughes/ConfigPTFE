@@ -1,0 +1,21 @@
+﻿@model ConfigPTFE.SampleMvcApp.Models.ConfigValuesModel
+
+@{
+    ViewBag.Title = "Show Config Values";
+}
+
+<h2>ConfigValues</h2>
+
+<h3>AppSettings merged from configs in the website directory and the "shared" directory specified in the environment.config</h3>
+<ul>
+@foreach (var key in System.Configuration.ConfigurationManager.AppSettings.AllKeys) { 
+	<li>@key - @System.Configuration.ConfigurationManager.AppSettings[key]</li>
+}
+</ul>
+
+<h3>Connectionstrings merged from configs in the website directory and the "shared" directory specified in the environment.config</h3>
+<ul>
+@foreach (System.Configuration.ConnectionStringSettings setting in System.Configuration.ConfigurationManager.ConnectionStrings) { 
+	<li>@setting.Name - @setting.ConnectionString</li>
+}
+</ul>

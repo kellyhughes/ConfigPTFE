@@ -1,0 +1,10 @@
+﻿@{
+	ViewBag.Title = "Home Page";
+}
+<p>
+	Unless the AdvancedConfigurationProvider.Initialize(...) method is called in the Global.asax (ex. Application_Start())
+	or the environment.config file specified in the web.config is present on the filesystem, this running this web application 
+	will throw an exception.
+</p>
+
+@Html.ActionLink("Continue", "ConfigValues");

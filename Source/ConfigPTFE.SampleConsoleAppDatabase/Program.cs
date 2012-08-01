@@ -53,13 +53,15 @@ namespace ConfigPTFE.SampleConsoleAppDatabase {
 			ConfigPTFE.AdvancedConfigurationProvider.Initialize(
 				x => {
 					x.EnvironmentName = environmentName;
-					x.EnvironmentRole = string.Empty;
-					x.ConfigSectionLocations.Add("COMMONSETTINGS", @"C:\Configuration\CommonSettings\Samples");
-					x.ConfigSectionLocations.Add("CONNECTIONSTRINGS", @"C:\Configuration\Connectionstrings\Samples");
-					x.AesKey = GetAesKey();
-					x.AesIV = GetAesIV();
+
+					// These settings are not needed for this example since we are only using the database and no encryption.
+					//x.EnvironmentRole = string.Empty;
+					//x.ConfigSectionLocations.Add("COMMONSETTINGS", @"C:\Configuration\CommonSettings\Samples");
+					//x.ConfigSectionLocations.Add("CONNECTIONSTRINGS", @"C:\Configuration\Connectionstrings\Samples");
+					//x.AesKey = GetAesKey();
+					//x.AesIV = GetAesIV();
 				}
-				);
+			);
 		}
 
 
