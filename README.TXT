@@ -1,3 +1,6 @@
+You can read a more extensive overview here:
+http://kellyhughes.github.com/ConfigPTFE/
+
 This library helps software development teams accomplish two goals:
 1.) share common configuration data between multiple applications.
 2.) switch configuration data used by applications via a global "environment name".
